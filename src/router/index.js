@@ -5,6 +5,10 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/',
+      redirect: '/constancia/20250100' // <-- Si entran a la raíz, los manda aquí automáticamente
+    },
+    {
       path: '/constancia/:cui',
       name: 'constancia',
       component: ConstanciaView,
