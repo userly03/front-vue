@@ -1,11 +1,128 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Sisacad Frontend</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Constancia de Matrícula - EPIS</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  
+  <style>
+    body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background-color: #ffffff; color: #333; }
+    .constancia-container { max-width: 900px; margin: 30px auto; padding: 20px; border: 1px solid #e0e0e0; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+    .header-section { text-align: center; margin-bottom: 20px; }
+    .header-section h1 { color: #0c4a80; font-size: 22px; margin-bottom: 5px; }
+    .header-section h2 { color: #555; font-size: 16px; margin-top: 0; }
+    .fecha-emision { font-size: 12px; color: #777; }
+    .divider { border: 0; border-top: 2px solid #0c4a80; margin-bottom: 25px; }
+    h3 { background-color: #f0f4f8; color: #0c4a80; font-size: 14px; padding: 8px 12px; margin-bottom: 15px; border-left: 4px solid #0c4a80; }
+    .info-grid { display: grid; grid-template-columns: 150px 1fr; row-gap: 10px; margin-bottom: 30px; font-size: 14px; }
+    .label { font-weight: bold; color: #555; }
+    .table-bold { font-weight: bold; }
+    .epis-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+    .epis-table th, .epis-table td { border: 1px solid #dbdbdb; padding: 10px; text-align: left; }
+    .epis-table th { background-color: #f7f7f7; color: #0c4a80; }
+    .epis-table tbody tr:nth-child(even) { background-color: #fafafa; }
+    .text-center { text-align: center; }
+    .loading { text-align: center; font-size: 16px; color: #0c4a80; padding: 5px; }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="constancia-container">
+      
+      <div v-if="loading" class="loading">
+        <p>Conectando al backend de Vercel y cargando datos de la EPIS...</p>
+      </div>
+
+      <div v-else-if="error" style="color: red; text-align: center; padding: 20px;">
+        {{ error }}
+      </div>
+
+      <div v-else>
+        <header class="header-section">
+          <h1>CONSTANCIA DE MATRÍCULA DE LABORATORIO</h1>
+          <h2>Escuela Profesional de Ingeniería de Sistemas - EPIS</h2>
+          <p class="fecha-emision">Emitido el: 11/06/2026</p>
+        </header>
+        
+        <hr class="divider" />
+
+        <section class="info-section">
+          <h3>DATOS DEL ALUMNO</h3>
+          <div class="info-grid">
+            <div class="label">C.U.I.:</div>
+            <div class="table-bold">{{ estudiante.cui }}</div>
+            <div class="label">Nombre completo:</div>
+            <div>{{ estudiante.full_name }}</div>
+            <div class="label">Email:</div>
+            <div>{{ estudiante.email || 'No registrado' }}</div>
+          </div>
+        </section>
+
+        <section class="courses-section">
+          <h3>ASIGNATURAS MATRICULADAS</h3>
+          <table class="epis-table">
+            <thead>
+              <tr>
+                <th>N°</th><th>Código</th><th>Curso</th><th>Año</th><th>Grupo</th><th>Laboratorio</th><th>Docente</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in constancia" :key="item.id">
+                <td class="text-center">{{ index + 1 }}</td>
+                <td>{{ item.workload.course.code }}</td>
+                <td><span class="table-bold">{{ item.workload.course.name }}</span> ({{ item.workload.course.acronym }})</td>
+                <td>{{ item.workload.course.year_display }}</td>
+                <td class="text-center">{{ item.workload.group }}</td>
+                <td>{{ item.workload.laboratory }}</td>
+                <td>{{ item.workload.teacher.full_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <p><span class="table-bold">Total de cursos matriculados:</span> {{ constancia.length }}</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          constancia: [],
+          estudiante: {},
+          loading: true,
+          error: null
+        }
+      },
+      mounted() {
+        // Captura el CUI de la URL (por ejemplo: /constancia/20250100)
+        const pathSegments = window.location.pathname.split('/');
+        // Si el usuario no pone un CUI en la URL, usamos el de Juan Pérez por defecto (20250100)
+        const cui = pathSegments[pathSegments.length - 1] || '20250100';
+
+        // Consumimos el backend usando el CUI dinámico
+        axios.get(`https://sisacad-enrollments-backend.vercel.app/restful/enrollment-certificate/?cui=${cui}`)
+          .then(response => {
+            if (response.data.results && response.data.results.length > 0) {
+              this.constancia = response.data.results;
+              this.estudiante = response.data.results[0].student;
+            } else {
+              this.error = 'No se encontraron registros para el CUI solicitado.';
+            }
+          })
+          .catch(err => {
+            this.error = 'Error al conectar con el servidor de Vercel.';
+          })
+          .finally(() => {
+            this.loading = false;
+          });
+      }
+    }).mount('#app');
+  </script>
+</body>
 </html>
