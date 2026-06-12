@@ -101,12 +101,13 @@
       },
       mounted() {
         // Captura el CUI de la URL (por ejemplo: /constancia/20250100)
-        const pathSegments = window.location.pathname.split('/');
-        // Si el usuario no pone un CUI en la URL, usamos el de Juan Pérez por defecto (20250100)
-        const cui = pathSegments[pathSegments.length - 1] || '20250100';
+        const urlParams = new URLSearchParams(window.location.search);
+        // Si el usuario no pone un CUI en la URL, usa el de Juan Pérez por defecto (20250100)
+        const cui = urlParams.get('cui') || '20250100';
 
         // Consumimos el backend usando el CUI dinámico
         axios.get(`https://sisacad-enrollments-backend.vercel.app/restful/enrollment-certificate/?cui=${cui}`)
+        // ... (el resto de tu código then, catch y finally se queda exactamente igual)
           .then(response => {
             if (response.data.results && response.data.results.length > 0) {
               this.constancia = response.data.results;
