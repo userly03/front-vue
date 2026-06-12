@@ -6,7 +6,7 @@
     <div v-else>
       <header class="header-section">
         <h1>CONSTANCIA DE MATRÍCULA DE LABORATORIO</h1>
-        <h2>Escuela Profesional de Ingeniería de Sistemas EPIS</h2>
+        <h2>Escuela Profesional de Ingeniería de Sistemas - EPIS</h2>
         <p class="fecha-emision">Emitido el: 11/06/2026</p>
       </header>
       <hr class="divider" />
@@ -54,21 +54,48 @@
 
 <script>
 import axios from 'axios'
+
 export default {
   props: ['cui'],
   data() {
-    return { constancia: [], estudiante: {}, loading: true, error: null }
+    return { 
+      constancia: [], 
+      estudiante: {}, 
+      loading: true, 
+      error: null 
+    }
   },
   mounted() {
-    axios.get(`https://sisacad-enrollments-backend.vercel.app/restful/enrollment-certificate/?cui=${this.cui}`)
-      .then(response => {
-        if (response.data.results && response.data.results.length > 0) {
-          this.constancia = response.data.results
-          this.estudiante = response.data.results[0].student
-        } else { this.error = 'No se encontraron registros.' }
-      })
-      .catch(() => { this.error = 'Error de comunicación con el Backend.' })
-      .finally(() => { this.loading = false })
+    this.buscarConstancia()
+  },
+  watch: {
+    // Si se tipea un CUI diferente directo en el navegador, recarga los datos
+    cui() {
+      this.buscarConstancia()
+    }
+  },
+  methods: {
+    buscarConstancia() {
+      this.loading = true
+      this.error = null
+      
+      // CRUCIAL: Uso de backticks (``) y parámetro dinámico ${this.cui}
+      axios.get(`https://sisacad-enrollments-backend.vercel.app/restful/enrollment-certificate/?cui=${this.cui}`)
+        .then(response => {
+          if (response.data.results && response.data.results.length > 0) {
+            this.constancia = response.data.results
+            this.estudiante = response.data.results[0].student
+          } else { 
+            this.error = `No se encontraron registros para el CUI: ${this.cui}` 
+          }
+        })
+        .catch(() => { 
+          this.error = 'Error de comunicación con el Backend de la EPIS.' 
+        })
+        .finally(() => { 
+          this.loading = false 
+        })
+    }
   }
 }
 </script>
@@ -88,4 +115,5 @@ h3 { background-color: #f0f4f8; padding: 8px 12px; border-left: 4px solid #0c4a8
 .table-bold { font-weight: bold; }
 .text-center { text-align: center; }
 .alert { padding: 15px; background-color: #e3f2fd; color: #0d47a1; text-align: center; }
+.alert.error { background-color: #ffebee; color: #c62828; }
 </style>
